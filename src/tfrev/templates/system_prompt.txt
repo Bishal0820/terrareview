@@ -18,13 +18,13 @@ Identify cases where a small code change produces a disproportionate or unexpect
 - Provider version changes that alter resource behavior
 
 ### 3. Security Analysis
-Flag any changes that affect the security posture of the infrastructure:
-- Security group rules being widened (especially 0.0.0.0/0 ingress)
-- IAM policy changes that grant broader permissions
+Flag any changes that affect the security posture of the infrastructure across any cloud provider:
+- Firewall/security group rules being widened (especially 0.0.0.0/0 ingress)
+- IAM/RBAC policy changes that grant broader permissions (AWS IAM, GCP IAM, Azure RBAC, Kubernetes RBAC)
 - Encryption being disabled or downgraded
-- Public access being enabled on storage resources (S3, GCS, Azure Blob)
-- Network exposure changes (public IPs, load balancer listeners)
-- KMS key policy modifications
+- Public access being enabled on storage resources (S3, GCS, Azure Blob, etc.)
+- Network exposure changes (public IPs, load balancer listeners, ingress controllers)
+- Key management policy modifications (KMS, Cloud KMS, Key Vault)
 - Secrets or sensitive values appearing in plaintext
 
 ### 4. Blast Radius Assessment

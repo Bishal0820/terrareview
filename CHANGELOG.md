@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.0.1] - 2026-04-04
+
+### Changed
+- Made documentation and examples cloud-agnostic (AWS, GCP, Azure, Kubernetes)
+- Updated system prompt security analysis to cover multi-cloud providers
+- Expanded `.tfrev.yaml.example` with GCP, Azure, and Kubernetes sensitive resources
+
+### Removed
+- Unused `changes.diff` example file
+
 ## [1.0.0] - 2026-04-03
 
 ### Added

@@ -29,13 +29,14 @@ policies:
     required_tags: ["Environment", "Team", "CostCenter"]
     severity: medium
 
-  - name: no-hardcoded-amis
-    description: "AMI IDs should come from data sources, not hardcoded strings"
+  - name: no-hardcoded-images
+    description: "Machine image IDs (AMIs, GCE images, etc.) should come from data sources, not hardcoded strings"
     severity: low
 
 # Resources that should always receive extra scrutiny
 # Supports glob patterns
 sensitive_resources:
+  # AWS
   - aws_iam_*
   - aws_security_group*
   - aws_kms_key
@@ -43,8 +44,19 @@ sensitive_resources:
   - aws_rds_cluster
   - aws_db_instance
   - aws_route53_zone
+  # GCP
   - google_project_iam_*
+  - google_compute_firewall*
+  - google_kms_*
+  - google_sql_database_instance
+  # Azure
   - azurerm_key_vault*
+  - azurerm_network_security_group*
+  - azurerm_role_assignment
+  - azurerm_mssql_server
+  # Kubernetes
+  - kubernetes_cluster_role*
+  - kubernetes_network_policy
 
 # Files to ignore in the diff (glob patterns)
 ignore:

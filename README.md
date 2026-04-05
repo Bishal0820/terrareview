@@ -2,7 +2,7 @@
 
 **Verify your Terraform plan matches your code intent before apply.**
 
-tfrev uses Claude AI to review your `terraform plan` output against your code changes, catching mismatches, security risks, and unexpected side effects before they hit production.
+tfrev uses Claude AI to review your `terraform plan` output against your code changes, catching mismatches, security risks, and unexpected side effects before they hit production. Works with any Terraform provider — AWS, Azure, GCP, Kubernetes, and more.
 
 ## Quick Start
 
@@ -86,8 +86,9 @@ policies:
     description: "Flag security group rules allowing 0.0.0.0/0"
     severity: critical
 sensitive_resources:
-  - aws_iam_*
-  - aws_security_group*
+  - aws_iam_*            # AWS
+  - google_project_iam_* # GCP
+  - azurerm_key_vault*   # Azure
 ```
 
 See `.tfrev.yaml.example` for all options.
