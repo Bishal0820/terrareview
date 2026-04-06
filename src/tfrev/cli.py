@@ -14,7 +14,7 @@ import click
 from tfrev import __version__
 from tfrev.client import ReviewClient
 from tfrev.config import load_config, severity_meets_threshold
-from tfrev.diff_parser import DiffSummary, filter_diff, parse_diff
+from tfrev.diff_parser import DiffHunk, DiffSummary, FileDiff, filter_diff, parse_diff
 from tfrev.output import format_json, format_markdown, format_table
 from tfrev.plan_parser import PlanSummary, load_plan_file, parse_plan_json
 from tfrev.prompt import build_system_prompt, build_user_prompt, estimate_tokens
@@ -77,7 +77,7 @@ def main():
     "--plan-text",
     "plan_text_path",
     type=click.Path(exists=True),
-    help="Path to human-readable plan output (fallback)",
+    help="Path to human-readable plan output (best-effort; JSON via --plan is recommended)",
 )
 @click.option(
     "--auto", "auto_mode", is_flag=True, help="Auto-detect plan file from current directory"
@@ -329,24 +329,104 @@ def _auto_detect_plan(quiet: bool) -> PlanSummary:
 _EMPTY_TREE_SHA = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
 
 
+def _detect_default_branch() -> str:
+    """Detect the default branch (main or master), falling back to 'main'."""
+    try:
+        for candidate in ("main", "master"):
+            ret = subprocess.run(
+                ["git", "rev-parse", "--verify", "--quiet", candidate],
+                capture_output=True,
+                timeout=10,
+            )
+            if ret.returncode == 0:
+                return candidate
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        pass
+    return "main"
+
+
+def _scan_tf_files(directory: Path, quiet: bool) -> DiffSummary:
+    """Build a DiffSummary by reading all .tf/.tfvars files in a directory tree."""
+
+    tf_files = sorted(
+        p
+        for pattern in ("**/*.tf", "**/*.tfvars")
+        for p in directory.glob(pattern)
+        if ".terraform" not in p.parts
+    )
+
+    if not tf_files:
+        if not quiet:
+            click.echo("No .tf or .tfvars files found in current directory.", err=True)
+        return DiffSummary(files=[])
+
+    files: list[FileDiff] = []
+    for tf_path in tf_files:
+        try:
+            if tf_path.stat().st_size > 20_000:
+                continue
+            rel = str(tf_path.relative_to(directory))
+            content = tf_path.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        lines = content.splitlines()
+        hunk_lines = [f"+{line}" for line in lines]
+        hunk = DiffHunk(
+            old_start=0,
+            old_count=0,
+            new_start=1,
+            new_count=len(lines),
+            lines=hunk_lines,
+        )
+        files.append(FileDiff(path=rel, status="added", hunks=[hunk]))
+
+    if not quiet:
+        click.echo(f"Found {len(files)} Terraform file(s).", err=True)
+
+    return DiffSummary(files=files)
+
+
 def _generate_diff(base_ref: str | None, quiet: bool) -> DiffSummary:
     """Generate a git diff against base_ref (or CI/main fallback).
 
     If no Terraform files changed vs the base ref (e.g. first commit), falls
     back to diffing against the empty tree so all current files are visible.
     """
+    # Check we're inside a git repository
+    has_git = False
+    try:
+        git_check = subprocess.run(
+            ["git", "rev-parse", "--is-inside-work-tree"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        has_git = git_check.returncode == 0
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        pass
+
+    if not has_git:
+        # No git — scan current directory for .tf/.tfvars files
+        if not quiet:
+            click.echo(
+                "Not a git repository. Scanning current directory for Terraform files.",
+                err=True,
+            )
+        return _scan_tf_files(Path.cwd(), quiet)
+
     base = (
         base_ref
         or os.environ.get("GITHUB_BASE_REF")
         or os.environ.get("CI_MERGE_REQUEST_TARGET_BRANCH_NAME")
         or os.environ.get("CHANGE_TARGET")
-        or "main"
+        or _detect_default_branch()
     )
 
     if not quiet:
         label = "base ref" if base_ref else "auto-detected base"
         click.echo(f"Generating diff against {label}: {base}", err=True)
 
+    used_empty_tree = False
     try:
         result = subprocess.run(
             ["git", "diff", f"{base}...HEAD", "--", "*.tf", "*.tfvars"],
@@ -363,19 +443,33 @@ def _generate_diff(base_ref: str | None, quiet: bool) -> DiffSummary:
                 timeout=30,
             )
             if result.returncode != 0:
-                click.echo(
-                    f"Error: git diff failed for both '{base}' and 'origin/{base}': "
-                    f"{result.stderr.strip()}",
-                    err=True,
+                # Both refs failed — fall back to empty-tree diff
+                if not quiet:
+                    click.echo(
+                        f"Could not diff against '{base}' or 'origin/{base}'. "
+                        "Reviewing full current state of files.",
+                        err=True,
+                    )
+                result = subprocess.run(
+                    ["git", "diff", _EMPTY_TREE_SHA, "HEAD", "--", "*.tf", "*.tfvars"],
+                    capture_output=True,
+                    text=True,
+                    timeout=30,
                 )
-                sys.exit(2)
+                used_empty_tree = True
+                if result.returncode != 0:
+                    click.echo(
+                        f"Error: git diff failed: {result.stderr.strip()}",
+                        err=True,
+                    )
+                    sys.exit(2)
     except FileNotFoundError:
         click.echo("Error: git not found. Is it installed and in PATH?", err=True)
         sys.exit(2)
 
     diff = parse_diff(result.stdout)
 
-    if diff.total_files == 0:
+    if diff.total_files == 0 and not used_empty_tree:
         # No changes vs base ref — fall back to full current state (e.g. first commit)
         if not quiet:
             click.echo(

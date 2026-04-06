@@ -152,8 +152,8 @@ The prompt builder constructs the full Claude prompt by assembling:
 
 The prompt builder also handles **context window management**:
 
-- If the combined input exceeds token limits, it prioritizes: (a) resource changes with actions != no-op, (b) diff hunks for changed files, (c) custom policies
-- Large plans are chunked by resource group, with a final synthesis pass
+- If the combined input exceeds token limits, context files are dropped first; if the plan + diff alone still exceed the limit, the review is rejected with an error
+- Each review is a single API call — there is no chunking or multi-pass synthesis
 
 #### 3.2.2 Claude API Client (`tfrev/client.py`)
 

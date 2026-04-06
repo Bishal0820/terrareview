@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.1.0] - 2026-04-05
+
+### Added
+- Non-git directory support — `tfrev review` now scans local `.tf`/`.tfvars` files when not in a git repository
+- Default branch auto-detection — detects `main` vs `master` instead of hardcoding `main`
+- Resource-aware context discovery — uses plan resource addresses and module references to find relevant `.tf` files, not just root-level globs
+- Local module source resolution — follows relative `source` paths in module blocks to include module source files as context
+- `PermissionDeniedError` handling with actionable error message for insufficient API key permissions
+
+### Changed
+- Both-refs-fail scenario now falls back to empty-tree diff instead of exiting with an error
+- `--plan-text` help text clarified as best-effort; JSON via `--plan` is recommended
+- Development status classifier changed from `Production/Stable` to `Beta`
+- README sample output updated to use real AWS resource types instead of `null_resource`
+- README cost section clarified with typical cost range and single-call model
+- ARCHITECTURE.md corrected to accurately describe single-call model (no chunking)
+
+### Removed
+- `httpx` direct dependency — now uses `anthropic.Timeout` from the Anthropic SDK
+
 ## [1.0.1] - 2026-04-04
 
 ### Changed
