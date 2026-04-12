@@ -5,7 +5,6 @@ from __future__ import annotations
 import pytest
 
 from tfrev.plan_parser import (
-    PlanSummary,
     _extract_attribute_changes,
     _resolve_action,
     format_plan_for_prompt,

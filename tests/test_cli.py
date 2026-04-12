@@ -201,7 +201,8 @@ class TestReviewCommand:
         empty = MagicMock(returncode=0, stdout="", stderr="")
         full_state = MagicMock(returncode=0, stdout=diff_text, stderr="")
 
-        with patch("tfrev.cli.subprocess.run", side_effect=[git_check, detect_branch, empty, full_state]):
+        side_effects = [git_check, detect_branch, empty, full_state]
+        with patch("tfrev.cli.subprocess.run", side_effect=side_effects):
             plan_file = str(FIXTURES_DIR / "plan_minimal.json")
             result = runner.invoke(main, ["review", "--plan", plan_file, "--quiet"])
         assert result.exit_code == 0

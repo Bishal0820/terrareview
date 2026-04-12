@@ -44,6 +44,7 @@ class PlanSummary:
     deleting: int = 0
     replacing: int = 0
     no_op: int = 0
+
     @property
     def has_changes(self) -> bool:
         return (self.creating + self.updating + self.deleting + self.replacing) > 0

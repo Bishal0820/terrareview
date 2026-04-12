@@ -155,7 +155,7 @@ def review(
     if not base_ref and not quiet:
         default_branch = _detect_default_branch()
         click.echo(
-            f"No --base-ref provided. --base-ref is the previous commit, branch, or tag "
+            "No --base-ref provided. --base-ref is the previous commit, branch, or tag "
             "to compare your current Terraform code against (e.g. the last known-good state).",
             err=True,
         )

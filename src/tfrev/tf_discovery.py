@@ -158,7 +158,7 @@ def discover_context_files(
         while addr.startswith("module.") and addr.count(".") >= 2:
             addr = addr.split(".", 2)[-1]
         # Remove index: "aws_instance.web[0]" → "aws_instance.web"
-        addr = re.sub(r'\[.*?\]', '', addr)
+        addr = re.sub(r"\[.*?\]", "", addr)
         resource_addrs.add(addr)
 
         if rc.module_address:
