@@ -4,7 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
-## [Unreleased]
+## [2.0.0] - 2026-04-17
+
+### Migration from 1.0.x
+
+- `--plan-text` has been removed. Use `--plan <file>` with JSON output from `terraform show -json <tfplan>` instead.
+- If you invoke `tfrev review` from CI/CD, add `--quiet` to the command. Without `--quiet`, tfrev now prompts for interactive confirmation before sending plan + diff to Claude and will hang on a non-interactive stdin. The `--base-ref` confirmation and the context-overflow prompt are suppressed the same way.
+- Exit code on unparseable Claude responses changed from 0 to 2. CI scripts that treated any non-zero exit as a failure will continue to work; scripts that explicitly checked `== 0` to mean "review ran" need updating.
 
 ### Added
 - Non-git directory support — `tfrev review` now scans local `.tf`/`.tfvars` files when not in a git repository
