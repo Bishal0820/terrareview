@@ -190,12 +190,15 @@ class TestReviewCommand:
             result = runner.invoke(main, ["review", "--plan", plan_file, "--quiet"])
         assert result.exit_code == 2
 
-    def test_git_diff_timeout(self, runner):
+    def test_git_diff_timeout(self, runner, monkeypatch):
         """A TimeoutExpired from git diff should exit 2 with a clean error, not a traceback."""
         import subprocess as sp
 
-        # First call (git rev-parse --is-inside-work-tree) succeeds; the actual
-        # git-diff call then times out.
+        # Pin the base-ref lookup so the test doesn't depend on CI env vars
+        # that would otherwise change which subprocess call the timeout hits.
+        for var in ("GITHUB_BASE_REF", "CI_MERGE_REQUEST_TARGET_BRANCH_NAME", "CHANGE_TARGET"):
+            monkeypatch.delenv(var, raising=False)
+
         git_check = MagicMock(returncode=0, stdout="true", stderr="")
         detect_branch = MagicMock(returncode=0)
 
@@ -213,6 +216,32 @@ class TestReviewCommand:
             plan_file = str(FIXTURES_DIR / "plan_minimal.json")
             result = runner.invoke(main, ["review", "--plan", plan_file, "--quiet"])
         assert result.exit_code == 2
+        assert "timed out" in result.output.lower() or "timeout" in result.output.lower()
+
+    def test_git_diff_timeout_in_empty_tree_fallback(self, runner, monkeypatch):
+        """Timeout during the empty-tree fallback must also exit 2 cleanly."""
+        import subprocess as sp
+
+        # Simulate CI: base ref comes from env, so no _detect_default_branch call.
+        monkeypatch.setenv("GITHUB_BASE_REF", "main")
+
+        git_check = MagicMock(returncode=0, stdout="true", stderr="")
+        empty_diff = MagicMock(returncode=0, stdout="", stderr="")
+
+        def side_effect(*args, **kwargs):
+            call = side_effect.calls
+            side_effect.calls += 1
+            if call == 0:
+                return git_check
+            if call == 1:
+                return empty_diff
+            raise sp.TimeoutExpired(cmd="git diff", timeout=30)
+
+        side_effect.calls = 0
+        with patch("tfrev.cli.subprocess.run", side_effect=side_effect):
+            plan_file = str(FIXTURES_DIR / "plan_minimal.json")
+            result = runner.invoke(main, ["review", "--plan", plan_file, "--quiet"])
+        assert result.exit_code == 2, result.output
         assert "timed out" in result.output.lower() or "timeout" in result.output.lower()
 
     def test_git_diff_both_refs_fail(self, runner):

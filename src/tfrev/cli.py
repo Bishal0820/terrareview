@@ -545,6 +545,13 @@ def _generate_diff(base_ref: str | None, quiet: bool) -> DiffSummary:
                 diff = parse_diff(result.stdout)
         except FileNotFoundError:
             pass  # git already confirmed present above
+        except subprocess.TimeoutExpired:
+            click.echo(
+                "Error: git diff timed out. Try a smaller base ref range or "
+                "check for a hung git process.",
+                err=True,
+            )
+            sys.exit(2)
 
     return diff
 
