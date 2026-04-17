@@ -15,6 +15,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ### Changed
 - Skip the Claude API call and exit 0 when the plan shows no infrastructure changes (0 create / 0 update / 0 delete / 0 replace)
+- Prompt for confirmation before sending plan + diff to Claude (default: yes). Suppressed by `--quiet` for CI/automation use.
+- README "Any CI/CD" snippet updated to include `--quiet` with a note explaining why it is required in non-interactive environments
 - Removed per-model context limit mapping — uses a single default context limit (200k tokens) that works with any model
 - Context window overflow now prompts the user to continue instead of hard-failing (default: abort)
 - Missing `--base-ref` now warns the user with an explanation of what it is and the fallback behavior, then asks to confirm before proceeding

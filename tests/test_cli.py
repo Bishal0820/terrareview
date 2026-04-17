@@ -265,8 +265,8 @@ class TestReviewCommand:
             patch("tfrev.cli.subprocess.run", return_value=not_git),
             runner.isolated_filesystem(),
         ):
-            # No --quiet, no --base-ref, no stdin input supplied.
-            result = runner.invoke(main, ["review", "--plan", plan_file], input="")
+            # No --quiet, no --base-ref. Supply "y" to accept the send confirmation.
+            result = runner.invoke(main, ["review", "--plan", plan_file], input="y\n")
 
         # The base-ref prompt should not fire in a non-git dir.
         assert "Continue?" not in result.output
@@ -288,6 +288,24 @@ class TestReviewCommand:
 
         result = runner.invoke(main, ["review", "--plan", plan_file, "--quiet"])
         assert result.exit_code == 2
+
+    @patch("tfrev.cli.ReviewClient")
+    def test_send_confirmation_declined_skips_claude(
+        self, mock_client_cls, runner, pass_api_response, mock_git_diff
+    ):
+        """Answering 'n' to the send confirmation exits 2 without calling Claude."""
+        mock_client_cls.return_value.review.return_value = pass_api_response
+        plan_file = str(FIXTURES_DIR / "plan_minimal.json")
+
+        # No --quiet: the send-confirmation prompt fires. Answer 'n'.
+        # Also supply 'y' for the base-ref prompt that precedes it.
+        result = runner.invoke(
+            main,
+            ["review", "--plan", plan_file, "--base-ref", "HEAD~1"],
+            input="n\n",
+        )
+        assert result.exit_code == 2
+        mock_client_cls.return_value.review.assert_not_called()
 
     @patch("tfrev.cli.ReviewClient")
     def test_no_plan_changes_skips_claude(self, mock_client_cls, runner):

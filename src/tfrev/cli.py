@@ -266,6 +266,13 @@ def review(
                 sys.exit(2)
 
     if not quiet:
+        if not click.confirm(
+            "Send plan + diff to Claude for review?",
+            default=True,
+            err=True,
+        ):
+            click.echo("Aborting.", err=True)
+            sys.exit(2)
         click.echo("Sending to Claude for review...", err=True)
 
     # --- Call Claude ---
