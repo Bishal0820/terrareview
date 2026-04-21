@@ -89,10 +89,14 @@ def main():
 @click.option(
     "--provider",
     default=None,
-    type=click.Choice(["anthropic", "aws-bedrock"]),
+    type=click.Choice(["anthropic", "aws-bedrock"], case_sensitive=False),
     help="AI provider to use (overrides .tfrev.yaml)",
 )
-@click.option("--model", default=None, help="Override model (e.g., claude-sonnet-4-6 or a Bedrock model ID)")
+@click.option(
+    "--model",
+    default=None,
+    help="Override model (e.g., claude-sonnet-4-6 or a Bedrock model ID)",
+)
 @click.option(
     "--fail-on",
     default=None,

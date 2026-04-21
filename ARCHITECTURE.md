@@ -168,7 +168,7 @@ Thin wrapper around the Anthropic Python SDK. The active provider is selected at
 client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
 
 # provider: aws-bedrock
-client = anthropic.AnthropicBedrock(aws_region=config.aws_region or "us-east-1")
+client = anthropic.AnthropicBedrock()  # region/credentials from AWS credential chain
 ```
 
 Both clients share the same `messages.create()` interface, so the `review()` method is identical regardless of provider.
@@ -179,8 +179,8 @@ Both clients share the same `messages.create()` interface, so the `review()` met
 provider: anthropic      # direct Anthropic API (default)
 # — or —
 provider: aws-bedrock    # via AWS Bedrock (requires pip install 'tfrev[aws]')
-aws_region: us-east-1
 model: anthropic.claude-sonnet-4-5-20250514-v1:0
+# region and credentials come from the standard AWS credential chain
 ```
 
 **Error handling:**

@@ -31,16 +31,17 @@ class ReviewClient:
 
         if config.provider == "aws-bedrock":
             try:
-                self._client: anthropic.Anthropic | anthropic.AnthropicBedrock = (
-                    anthropic.AnthropicBedrock(
-                        timeout=anthropic.Timeout(120.0, connect=10.0),
-                    )
-                )
-            except ImportError:
+                import boto3  # noqa: F401
+            except ImportError as exc:
                 raise RuntimeError(
                     "boto3 is required for the 'aws-bedrock' provider.\n"
                     "Install it with: pip install 'tfrev[aws]'"
+                ) from exc
+            self._client: anthropic.Anthropic | anthropic.AnthropicBedrock = (
+                anthropic.AnthropicBedrock(
+                    timeout=anthropic.Timeout(120.0, connect=10.0),
                 )
+            )
         else:
             api_key = os.environ.get("ANTHROPIC_API_KEY")
             if not api_key:
@@ -98,7 +99,8 @@ class ReviewClient:
                 if attempt < max_retries - 1:
                     delay = base_delay * (2**attempt)
                     click.echo(
-                        f"API server error. Retrying in {delay:.0f}s ({attempt + 2}/{max_retries})...",
+                        f"API server error. Retrying in {delay:.0f}s"
+                        f" ({attempt + 2}/{max_retries})...",
                         err=True,
                     )
                     time.sleep(delay)

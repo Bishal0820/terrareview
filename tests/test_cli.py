@@ -178,7 +178,9 @@ class TestReviewCommand:
         assert any("abc1234...HEAD" in call.args[0] for call in diff_calls)
 
     @patch("tfrev.cli.ReviewClient")
-    def test_provider_flag_anthropic(self, mock_client_cls, runner, pass_api_response, mock_git_diff):
+    def test_provider_flag_anthropic(
+        self, mock_client_cls, runner, pass_api_response, mock_git_diff
+    ):
         """--provider anthropic sets config.provider to 'anthropic'."""
         mock_client_cls.return_value.review.return_value = pass_api_response
         plan_file = str(FIXTURES_DIR / "plan_minimal.json")

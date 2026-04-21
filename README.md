@@ -87,10 +87,11 @@ tfrev review --plan plan.json --base-ref abc1234
 - name: AI Plan Review (Bedrock)
   run: |
     pip install 'tfrev[aws]'
-    tfrev review --auto --output markdown --fail-on high --quiet
+    tfrev review --auto --provider aws-bedrock \
+      --model anthropic.claude-sonnet-4-5-20250514-v1:0 \
+      --output markdown --fail-on high --quiet
   env:
     AWS_DEFAULT_REGION: us-east-1
-    # provider: aws-bedrock must be set in .tfrev.yaml
 ```
 
 ### GitLab CI
