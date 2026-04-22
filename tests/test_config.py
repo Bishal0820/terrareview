@@ -66,8 +66,7 @@ class TestLoadConfig:
     def test_provider_aws_bedrock(self, tmp_path):
         config_file = tmp_path / ".tfrev.yaml"
         config_file.write_text(
-            "provider: aws-bedrock\n"
-            "model: anthropic.claude-sonnet-4-5-20250514-v1:0\n"
+            "provider: aws-bedrock\nmodel: anthropic.claude-sonnet-4-5-20250514-v1:0\n"
         )
         config = load_config(config_file)
         assert config.provider == "aws-bedrock"
